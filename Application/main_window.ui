@@ -1,0 +1,502 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>980</width>
+    <height>820</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>880</width>
+    <height>720</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>VideoConversion · 视频转换器</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="mainLayout" stretch="0,0,0,1,0,0,0,0">
+    <property name="spacing">
+     <number>12</number>
+    </property>
+    <property name="leftMargin">
+     <number>24</number>
+    </property>
+    <property name="topMargin">
+     <number>20</number>
+    </property>
+    <property name="rightMargin">
+     <number>24</number>
+    </property>
+    <property name="bottomMargin">
+     <number>20</number>
+    </property>
+    <item>
+     <layout class="QHBoxLayout" name="headerLayout">
+      <item>
+       <widget class="QLabel" name="titleLabel">
+        <property name="text">
+         <string>视频转换</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="headerSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="addButton">
+        <property name="text">
+         <string>＋ 添加视频</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="removeButton">
+        <property name="text">
+         <string>移除所选</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="clearButton">
+        <property name="text">
+         <string>清空</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QLabel" name="introLabel">
+      <property name="text">
+       <string>添加或拖入视频 · 一次设置，按顺序转换 · 保留原文件</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="noticeLayout" stretch="1,0">
+      <item>
+       <widget class="QLabel" name="noticeLabel">
+        <property name="text">
+         <string>正在检查转换工具……</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="logsButton">
+        <property name="text">
+         <string>查看日志</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QTabWidget" name="pageTabs">
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="conversionPage">
+       <attribute name="title">
+        <string>视频转换</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="conversionPageLayout">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>8</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <layout class="QHBoxLayout" name="contentLayout" stretch="1,0">
+          <property name="spacing">
+           <number>18</number>
+          </property>
+          <item>
+           <widget class="QGroupBox" name="queueGroup">
+            <property name="maximumSize">
+             <size>
+              <width>620</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="title">
+             <string>视频列表</string>
+            </property>
+            <layout class="QVBoxLayout" name="queueLayout">
+             <item>
+              <widget class="QListWidget" name="videoList">
+               <property name="selectionMode">
+                <enum>QAbstractItemView::ExtendedSelection</enum>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>128</width>
+                 <height>80</height>
+                </size>
+               </property>
+               <property name="spacing">
+                <number>5</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="queueHint">
+               <property name="text">
+                <string>尚未添加视频。支持多选文件与拖拽，不导入目录。</string>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="settingsGroup">
+            <property name="minimumSize">
+             <size>
+              <width>300</width>
+              <height>200</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>340</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="title">
+             <string>输出设置</string>
+            </property>
+            <layout class="QVBoxLayout" name="settingsOuterLayout">
+             <item>
+              <widget class="QScrollArea" name="settingsScroll">
+               <property name="frameShape">
+                <enum>QFrame::NoFrame</enum>
+               </property>
+               <property name="widgetResizable">
+                <bool>true</bool>
+               </property>
+               <widget class="QWidget" name="settingsContents">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>440</height>
+                 </size>
+                </property>
+                <layout class="QVBoxLayout" name="settingsLayout">
+                 <property name="spacing">
+                  <number>6</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>2</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>6</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="formatLabel">
+                   <property name="text">
+                    <string>输出格式</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QComboBox" name="formatCombo">
+                   <item>
+                    <property name="text">
+                     <string>MP4</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>MKV</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="qualityLabel">
+                   <property name="text">
+                    <string>画质</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QComboBox" name="qualityCombo">
+                   <item>
+                    <property name="text">
+                     <string>高画质</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>标准画质</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>减小体积</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="resolutionLabel">
+                   <property name="text">
+                    <string>分辨率</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QComboBox" name="resolutionCombo">
+                   <item>
+                    <property name="text">
+                     <string>保持原始</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>不超过 1080p</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>不超过 720p</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="directoryLabel">
+                   <property name="text">
+                    <string>输出目录</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLineEdit" name="directoryEdit">
+                   <property name="placeholderText">
+                    <string>选择结果保存位置</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="browseButton">
+                   <property name="text">
+                    <string>选择目录…</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="encodingHint">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>92</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string>H.264 视频 · AAC 音频
+降低分辨率保持比例，不放大小视频。
+“减小体积”不能保证结果一定更小。
+首版暂不支持 HDR/BT.2020。</string>
+                   </property>
+                   <property name="wordWrap">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="settingsSpacer">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>30</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </widget>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="logsPage">
+       <attribute name="title">
+        <string>运行日志</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="logsPageLayout" stretch="0,1">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>8</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <layout class="QHBoxLayout" name="logsToolbar">
+          <item>
+           <widget class="QLabel" name="logsHint">
+            <property name="text">
+             <string>当前会话最近的诊断 · 切换页面不影响转换</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="logsSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="copyButton">
+            <property name="text">
+             <string>复制日志</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QPlainTextEdit" name="logView">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="currentLabel">
+      <property name="text">
+       <string>等待添加视频</string>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QProgressBar" name="progressBar">
+      <property name="value">
+       <number>0</number>
+      </property>
+      <property name="textVisible">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="actionsLayout">
+      <item>
+       <widget class="QPushButton" name="cancelButton">
+        <property name="text">
+         <string>取消当前</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="stopButton">
+        <property name="text">
+         <string>停止全部</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="actionsSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="openButton">
+        <property name="text">
+         <string>打开输出目录</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="startButton">
+        <property name="minimumSize">
+         <size>
+          <width>150</width>
+          <height>42</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>开始转换</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QLabel" name="summaryLabel">
+      <property name="text">
+       <string>完成汇总：成功 0，失败 0，取消 0</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources />
+ <connections />
+</ui>

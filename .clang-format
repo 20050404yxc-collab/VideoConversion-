@@ -1,0 +1,28 @@
+BasedOnStyle: Google
+Language: Cpp
+Standard: c++17
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterFunction: true
+  AfterClass: true
+  AfterControlStatement: false
+  AfterEnum: true
+  AfterStruct: true
+  BeforeElse: false
+PointerAlignment: Right
+ReferenceAlignment: Right
+IndentCaseLabels: false
+SortIncludes: CaseSensitive
+FixNamespaceComments: false
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^<(algorithm|cmath|memory)>'
+    Priority: 1
+  - Regex: '^<(Q|Qt)'
+    Priority: 2
+  - Regex: '.*'
+    Priority: 3

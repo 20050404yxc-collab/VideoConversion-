@@ -1,0 +1,20 @@
+param([string]$ToolDirectory = '')
+$ErrorActionPreference = 'Stop'
+$projectRoot = Split-Path -Parent $PSScriptRoot
+if (!$ToolDirectory) { $ToolDirectory = Join-Path $projectRoot 'tools\bin' }
+$ffmpeg = Join-Path $ToolDirectory 'ffmpeg.exe'
+$fixtures = Join-Path $projectRoot 'tests\fixtures'
+New-Item -ItemType Directory -Force -Path $fixtures | Out-Null
+function Invoke-Fixture([string[]]$Arguments) {
+    & $ffmpeg -hide_banner -loglevel error -nostdin -y @Arguments
+    if ($LASTEXITCODE -ne 0) { throw 'Fixture generation failed.' }
+}
+Invoke-Fixture @('-f','lavfi','-i','testsrc2=size=320x180:rate=24','-f','lavfi','-i','sine=frequency=440:sample_rate=48000','-t','1.2','-c:v','libx264','-preset','ultrafast','-pix_fmt','yuv420p','-c:a','aac',(Join-Path $fixtures '中文 sample.mp4'))
+Invoke-Fixture @('-f','lavfi','-i','testsrc2=size=1080x1920:rate=5','-t','0.8','-c:v','libx264','-preset','ultrafast','-pix_fmt','yuv420p',(Join-Path $fixtures 'portrait.mp4'))
+Invoke-Fixture @('-f','lavfi','-i','testsrc=size=321x181:rate=5','-t','0.8','-c:v','ffv1',(Join-Path $fixtures 'odd.mkv'))
+Invoke-Fixture @('-f','lavfi','-i','testsrc2=size=1920x1080:rate=30','-t','12','-c:v','libx264','-preset','ultrafast','-pix_fmt','yuv420p',(Join-Path $fixtures 'long.mp4'))
+Invoke-Fixture @('-i',(Join-Path $fixtures '中文 sample.mp4'),'-c','copy','-metadata:s:v:0','rotate=90',(Join-Path $fixtures 'rotated.mp4'))
+Invoke-Fixture @('-f','lavfi','-i','testsrc2=size=320x180:rate=5','-t','0.8','-vf','setsar=2','-c:v','libx264','-preset','ultrafast',(Join-Path $fixtures 'anamorphic.mp4'))
+Invoke-Fixture @('-f','lavfi','-i','testsrc2=size=320x180:rate=5','-t','0.8','-c:v','libx264','-preset','ultrafast','-x264-params','colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc',(Join-Path $fixtures 'hdr.mp4'))
+'not a video' | Set-Content -LiteralPath (Join-Path $fixtures 'damaged.mp4') -Encoding UTF8
+Write-Output "Fixtures: $fixtures"

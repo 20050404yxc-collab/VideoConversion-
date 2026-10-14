@@ -54,3 +54,14 @@ compile_commands.json
 *creator.user*
 
 *_qmlcache.qrc
+
+# VideoConversion local build and tool artifacts
+/build/
+/dist/
+/tools/bin/
+/tools/ffmpeg-*/
+/tools/*.zip
+/tests/fixtures/
+*.user
+*.user.*
+__pycache__/
