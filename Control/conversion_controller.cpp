@@ -31,13 +31,12 @@ ConversionController::ConversionController(FfmpegService *service, SettingsStore
             return;
         }
         // 时长未知使用不确定进度，已知时长保持单调且提交前不达 100。
+        const double duration = m_batchRanges.value(task->id).duration(task->media.duration);
         const int percent =
-            task->media.duration > 0
-                ? std::min(99,
-                           static_cast<int>(std::min(99.0, seconds / task->media.duration * 100)))
-                : -1;
+            duration > 0 ? std::min(99, static_cast<int>(std::min(99.0, seconds / duration * 100)))
+                         : -1;
         task->percent = std::max(task->percent, percent);
-        emit currentProgress(task->id, task->media.duration > 0 ? task->percent : -1, m_position,
+        emit currentProgress(task->id, duration > 0 ? task->percent : -1, m_position,
                              m_batchIds.size());
     });
 }
@@ -63,7 +62,7 @@ bool ConversionController::launch(Operation operation, const QStringList &argume
 void ConversionController::addFiles(const QStringList &paths)
 {
     // 活动批次或退出中不能更改导入队列。
-    if (m_batchActive || m_shutdown) {
+    if (m_batchActive || m_shutdown || m_previewId != 0) {
         report(QStringLiteral("转换期间无法添加视频。"));
         return;
     }
@@ -103,7 +102,7 @@ void ConversionController::addFiles(const QStringList &paths)
 void ConversionController::removeTasks(const QVector<quint64> &ids)
 {
     // 转换批次锁定列表，空闲探测阶段允许编辑。
-    if (m_batchActive || m_shutdown) {
+    if (m_batchActive || m_shutdown || m_previewId != 0) {
         return;
     }
     // 被删除的活动探测先取消；完成时找不到标识便不回写该项。
@@ -136,6 +135,14 @@ bool ConversionController::startBatch(const ConversionSettings &settings)
         report(QStringLiteral("请等待信息读取和工具检查完成，并添加有效的待转换视频。"));
         return false;
     }
+    // 先验证全部等待项，任何错误都拒绝整批，不发生部分启动。
+    for (const ConversionTask &task : m_tasks) {
+        // 已保存范围必须仍在原始输入时长内，错误包含文件名。
+        if (task.state == TaskState::Waiting && !task.range.valid(task.media.duration)) {
+            report(QStringLiteral("%1：片段范围无效，请重新选择。").arg(task.input));
+            return false;
+        }
+    }
     // 保存偏好与本批快照；保存失败只提示，不破坏本批已选设置。
     m_preferences = settings;
     m_snapshot = settings;
@@ -144,10 +151,12 @@ bool ConversionController::startBatch(const ConversionSettings &settings)
         report(error);
     }
     m_batchIds.clear();
+    m_batchRanges.clear();
     for (const ConversionTask &task : m_tasks) {
         // 只选等待项，终态需要移除再添加才能重试。
         if (task.state == TaskState::Waiting) {
             m_batchIds.append(task.id);
+            m_batchRanges.insert(task.id, task.range);
         }
     }
     // 先锁定编辑再异步调度，防止重复点击和设置变化。
@@ -162,10 +171,55 @@ bool ConversionController::startBatch(const ConversionSettings &settings)
     return true;
 }
 
+bool ConversionController::beginPreview(quint64 id, QString *error)
+{
+    // 活动批次、其他预览或退出过程不能新建预览会话。
+    const ConversionTask *task = findTask(id);
+    if (m_batchActive || m_shutdown || m_previewId != 0 || !task ||
+        task->state == TaskState::Inspecting || !task->mediaValid ||
+        !QFileInfo(task->input).isFile() || !QFileInfo(task->input).isReadable()) {
+        *error = QStringLiteral("请选择一个已读取信息且原文件可访问的视频，转换期间不能预览。");
+        return false;
+    }
+    // 锁住队列与批次入口；其他文件的独立探测仍可继续。
+    m_previewId = id;
+    error->clear();
+    emit stateChanged();
+    return true;
+}
+
+void ConversionController::endPreview()
+{
+    // 先释放互斥再通知窗口恢复操作，不提交草稿。
+    m_previewId = 0;
+    emit stateChanged();
+}
+
+bool ConversionController::saveRange(quint64 id, const MediaRange &range, QString *error)
+{
+    // 预览拥有提交资格，终态和运行中任务均不能变成新的等待项。
+    ConversionTask *task = findTask(id);
+    if (m_batchActive || m_shutdown || m_previewId != id || !task ||
+        task->state != TaskState::Waiting || !range.valid(task->media.duration) ||
+        !QFileInfo(task->input).isReadable()) {
+        *error = QStringLiteral("无法保存：任务不可编辑或片段超出输入时长。");
+        return false;
+    }
+    // 原子提交当前项的值副本，其他任务和输出偏好不受影响。
+    task->range = range;
+    error->clear();
+    emit tasksChanged();
+    return true;
+}
+
+bool ConversionController::previewActive() const { return m_previewId != 0; }
+
+void ConversionController::recordPreviewDiagnostic(const QString &text) { appendLog(text); }
+
 void ConversionController::savePreferences(const ConversionSettings &settings)
 {
     // 批次运行中忽略配置修改，保持设置快照与界面锁一致。
-    if (m_batchActive || m_shutdown) {
+    if (m_batchActive || m_shutdown || m_previewId != 0) {
         return;
     }
     m_preferences = settings;
@@ -313,6 +367,7 @@ void ConversionController::completeInspection(ConversionTask *task, const Proces
             return;
         }
         // 有效媒体随后抽取单帧，直到抽帧完成前不允许整批开始。
+        task->mediaValid = true;
         launch(Operation::Thumbnail, thumbnailArguments(task->input, task->media), 15000);
         return;
     }
@@ -344,7 +399,7 @@ void ConversionController::beginConversion(ConversionTask *task)
     // 使用不可变批次设置，将输出写入本任务拥有的唯一临时路径。
     launch(Operation::Convert,
            conversionArguments(task->input, m_outputs.temporaryPath(), task->media,
-                               m_snapshot.encoding),
+                               m_snapshot.encoding, m_batchRanges.value(task->id)),
            0);
     emit tasksChanged();
     emit currentProgress(task->id, task->media.duration > 0 ? 0 : -1, m_position,
@@ -379,7 +434,8 @@ void ConversionController::completeConversion(ConversionTask *task, const Proces
     MediaInfo output;
     QString error;
     if (!parseMediaInfo(result.output, &output, &error) ||
-        !validateOutput(task->media, output, m_snapshot.encoding, &error) ||
+        !validateOutput(task->media, output, m_snapshot.encoding, &error,
+                        m_batchRanges.value(task->id)) ||
         !m_outputs.commit(&task->output, &error)) {
         settle(task, TaskState::Failed, error);
         return;
@@ -544,7 +600,8 @@ bool ConversionController::hasActiveWork() const
 bool ConversionController::canStart() const
 {
     // 所有导入检查完成才允许开始，终态不会自动参加新批次。
-    if (m_shutdown || m_initializing || !m_toolsReady || m_service->busy() || m_batchActive) {
+    if (m_shutdown || m_initializing || !m_toolsReady || m_service->busy() || m_batchActive ||
+        m_previewId != 0) {
         return false;
     }
     bool waiting = false;

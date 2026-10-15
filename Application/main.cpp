@@ -9,6 +9,8 @@
 #include "conversion_controller.h"
 #include "ffmpeg_service.h"
 #include "main_window.h"
+#include "media_playback_service.h"
+#include "preview_controller.h"
 #include "settings_store.h"
 
 // 全局入口仅做运行装配，产品类型位于 videoconversion 命名空间。
@@ -26,7 +28,12 @@ int main(int argc, char *argv[])
     videoconversion::FfmpegService service(tools);
     videoconversion::SettingsStore store;
     videoconversion::ConversionController controller(&service, &store);
-    videoconversion::MainWindow window(&controller);
+    videoconversion::MediaPlaybackService playback;
+    videoconversion::PreviewController preview(&playback, &controller);
+    videoconversion::MainWindow window(&controller, &preview);
+    // 入口连接 Qt 显示表面，窗口所有播放业务仍经 Control，表面先于销毁解除绑定。
+    QObject::connect(&window, &videoconversion::MainWindow::videoOutputChanged, &playback,
+                     &videoconversion::MediaPlaybackService::setVideoOutput);
     window.show();
     // 事件循环开始后再检查工具，使启动错误可展示在已创建窗口中。
     QTimer::singleShot(0, &controller, &videoconversion::ConversionController::initialize);

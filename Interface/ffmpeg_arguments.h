@@ -7,6 +7,7 @@
 
 #include <QStringList>
 
+#include "media_range.h"
 #include "media_types.h"
 
 namespace videoconversion {
@@ -46,10 +47,11 @@ QStringList probeArguments(const QString &path);
 QStringList thumbnailArguments(const QString &path, const MediaInfo &media);
 // 转换第一路视频及已选音频到临时路径，启用机器可读进度。
 QStringList conversionArguments(const QString &input, const QString &temporary,
-                                const MediaInfo &media, const EncodingOptions &options);
+                                const MediaInfo &media, const EncodingOptions &options,
+                                const MediaRange &range = {});
 // 核验实际输出的编码、容器、尺寸、音轨和已知时长。
 bool validateOutput(const MediaInfo &input, const MediaInfo &output, const EncodingOptions &options,
-                    QString *error);
+                    QString *error, const MediaRange &range = {});
 
 }
 #endif

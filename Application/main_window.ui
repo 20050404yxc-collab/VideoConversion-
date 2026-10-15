@@ -66,6 +66,11 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="previewButton">
+        <property name="text"><string>预览 / 选择片段</string></property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="removeButton">
         <property name="text">
          <string>移除所选</string>

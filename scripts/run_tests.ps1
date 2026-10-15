@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$QtRoot = 'D:\Qt\5.12.12\mingw73_64',
     [string]$MingwRoot = 'D:\Qt\Tools\mingw730_64',
     [switch]$SkipBuild,
@@ -8,6 +8,7 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $env:PATH = "$QtRoot\bin;$MingwRoot\bin;$env:PATH"
 $env:VIDEOCONVERSION_TOOLS = Join-Path $projectRoot 'tools\bin'
+if (!$env:VIDEOCONVERSION_VLC) { $env:VIDEOCONVERSION_VLC = Join-Path $projectRoot 'tools\vlc\vlc-3.0.24' }
 $env:VIDEOCONVERSION_FIXTURES = Join-Path $projectRoot 'tests\fixtures'
 $env:VIDEOCONVERSION_SCREENSHOTS = Join-Path $projectRoot 'docs\screenshots'
 if (!$SkipFixtures) { & "$PSScriptRoot\prepare_fixtures.ps1" }

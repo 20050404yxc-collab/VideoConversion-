@@ -25,6 +25,7 @@
 #include <QTabWidget>
 #include <QUrl>
 
+#include "preview_dialog.h"
 #include "ui_main_window.h"
 
 namespace videoconversion {
@@ -101,8 +102,9 @@ QString mediaDescription(const ConversionTask &task)
 }
 }
 
-MainWindow::MainWindow(ConversionController *controller, QWidget *parent)
-    : QMainWindow(parent), m_ui(new Ui::MainWindow), m_controller(controller)
+MainWindow::MainWindow(ConversionController *controller, PreviewController *preview,
+                       QWidget *parent)
+    : QMainWindow(parent), m_ui(new Ui::MainWindow), m_controller(controller), m_preview(preview)
 {
     // 控件归窗口所有，先恢复偏好再连接编辑信号，避免启动时无意义保存。
     m_ui->setupUi(this);
@@ -241,6 +243,9 @@ void MainWindow::connectActions()
 
 void MainWindow::connectPresentation()
 {
+    // 单击入口和双击都按当前单选标识打开同一事务式预览窗口。
+    connect(m_ui->previewButton, &QPushButton::clicked, this, &MainWindow::openPreview);
+    connect(m_ui->videoList, &QListWidget::itemDoubleClicked, this, &MainWindow::openPreview);
     // 控制层通知决定展示内容，窗口不推断工具完成是否成功。
     connect(m_controller, &ConversionController::tasksChanged, this, &MainWindow::refreshTasks);
     connect(m_controller, &ConversionController::stateChanged, this, &MainWindow::refreshState);
@@ -298,12 +303,14 @@ void MainWindow::refreshTasks()
     // 列表顺序完全来自控制器；详细错误和完整路径同时放到提示中。
     for (const ConversionTask &task : m_controller->tasks()) {
         const QString text = QFileInfo(task.input).fileName() + QLatin1Char('\n') +
-                             presentation::mediaDescription(task);
+                             presentation::mediaDescription(task) + QLatin1Char('\n') +
+                             rangeDescription(task.range);
         const QPixmap thumbnail =
             task.thumbnail.isNull() ? m_placeholder : QPixmap::fromImage(task.thumbnail);
         auto *item = new QListWidgetItem(QIcon(thumbnail), text, m_ui->videoList);
         item->setData(Qt::UserRole, QVariant::fromValue(task.id));
-        item->setToolTip(task.input + QLatin1Char('\n') + task.detail);
+        item->setToolTip(task.input + QLatin1Char('\n') + rangeDescription(task.range) +
+                         QLatin1Char('\n') + task.detail);
         item->setSelected(selected.contains(task.id));
         // 失败和取消颜色区分，文字状态仍保证不依赖颜色识别。
         if (task.state == TaskState::Failed) {
@@ -326,12 +333,30 @@ void MainWindow::refreshTasks()
 void MainWindow::refreshState()
 {
     // 批次锁定所有编辑，等待取消完成期间继续保持锁定。
-    const bool editable = !m_controller->batchActive() && !m_closing;
+    const bool editable =
+        !m_controller->batchActive() && !m_controller->previewActive() && !m_closing;
     m_ui->addButton->setEnabled(editable);
     m_ui->removeButton->setEnabled(editable && !m_ui->videoList->selectedItems().isEmpty());
     m_ui->clearButton->setEnabled(editable && !m_controller->tasks().isEmpty());
     m_ui->settingsGroup->setEnabled(editable);
     m_ui->startButton->setEnabled(m_controller->canStart() && !m_closing);
+    // 多选不任意挑一个输入；有效终态仍可只读查看原视频。
+    const auto selected = m_ui->videoList->selectedItems();
+    bool previewable = false;
+    if (selected.size() == 1) {
+        const quint64 id = selected.first()->data(Qt::UserRole).toULongLong();
+        // 队列刷新后按标识确认信息有效，原文件访问由控制层打开时复核。
+        for (const ConversionTask &task : m_controller->tasks()) {
+            // 完整媒体校验通过才可预览，不能把探测失败的半成品当成有效信息。
+            if (task.id == id && task.state != TaskState::Inspecting && task.mediaValid) {
+                previewable = true;
+                break;
+            }
+        }
+    }
+    m_ui->previewButton->setEnabled(editable && m_preview && previewable);
+    m_ui->previewButton->setToolTip(
+        QStringLiteral("请选择一个已读取信息的视频；多选或转换期间不能预览。"));
     bool currentCancelable = false;
     // 只有实际转换或验证中的项启用取消，重复点击保持无效。
     for (const ConversionTask &task : m_controller->tasks()) {
@@ -406,6 +431,11 @@ void MainWindow::dropEvent(QDropEvent *event)
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
+    // 即使代码直接要求关闭主窗口，也须先结束当前模态预览。
+    if (m_controller->previewActive()) {
+        event->ignore();
+        return;
+    }
     // 停止清理已完成，或无活动工作时可以立即关闭。
     if (m_allowClose || !m_controller->hasActiveWork()) {
         m_controller->savePreferences(selectedSettings());
@@ -431,5 +461,30 @@ void MainWindow::closeEvent(QCloseEvent *event)
         refreshState();
         m_controller->requestShutdown();
     }
+}
+
+void MainWindow::openPreview()
+{
+    // 两个入口共享单选与关闭状态检查，避免选区落到任意一个多选任务。
+    const auto selected = m_ui->videoList->selectedItems();
+    if (!m_preview || m_closing || selected.size() != 1) {
+        showNotice(QStringLiteral("请先选择一个视频再打开预览。"));
+        return;
+    }
+    QString error;
+    const quint64 id = selected.first()->data(Qt::UserRole).toULongLong();
+    // 控制层再次检查批次、任务和原文件访问，拒绝时不创建窗口。
+    if (!m_preview->open(id, &error)) {
+        showNotice(error);
+        return;
+    }
+    // 显示表面由入口绑定，窗口不调用播放服务；模态循环期间主窗口操作被锁定。
+    PreviewDialog dialog(m_preview, this);
+    emit videoOutputChanged(dialog.videoWidget());
+    dialog.exec();
+    // 所有退出方式先卸载媒体，再解除表面引用，随后允许销毁显示控件。
+    m_preview->close();
+    emit videoOutputChanged(nullptr);
+    refreshState();
 }
 }

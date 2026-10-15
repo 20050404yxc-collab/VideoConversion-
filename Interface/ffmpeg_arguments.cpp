@@ -65,7 +65,8 @@ QStringList thumbnailArguments(const QString &path, const MediaInfo &media)
 }
 
 QStringList conversionArguments(const QString &input, const QString &temporary,
-                                const MediaInfo &media, const EncodingOptions &options)
+                                const MediaInfo &media, const EncodingOptions &options,
+                                const MediaRange &range)
 {
     // 通用输入选项禁止覆盖，保留 FFmpeg 自动旋转，并映射实际选中视频流。
     QStringList arguments{QStringLiteral("-hide_banner"),
@@ -77,6 +78,12 @@ QStringList conversionArguments(const QString &input, const QString &temporary,
                           input,
                           QStringLiteral("-map"),
                           QStringLiteral("0:%1").arg(media.videoIndex)};
+    // 解码后按正常播放起点裁切，避免无索引 TS 快速定位缺失前滚参考帧。
+    if (range.enabled) {
+        arguments << QStringLiteral("-ss") << QString::number(range.startMs / 1000.0, 'f', 3)
+                  << QStringLiteral("-t")
+                  << QString::number((range.endMs - range.startMs) / 1000.0, 'f', 3);
+    }
     // 有音轨才映射与编码；无音轨时显式禁用音频。
     if (media.audioIndex >= 0) {
         arguments << QStringLiteral("-map") << QStringLiteral("0:%1").arg(media.audioIndex)
@@ -110,8 +117,13 @@ QStringList conversionArguments(const QString &input, const QString &temporary,
 }
 
 bool validateOutput(const MediaInfo &input, const MediaInfo &output, const EncodingOptions &options,
-                    QString *error)
+                    QString *error, const MediaRange &range)
 {
+    // 非法选区不能借由成功的工具退出绕过输入边界。
+    if (!range.valid(input.duration)) {
+        *error = QStringLiteral("片段范围无效，未提交正式文件。");
+        return false;
+    }
     // 结果必须包含预期视频、尺寸和音轨，不能仅凭非空文件宣告成功。
     if (output.videoCodec != QStringLiteral("h264") ||
         output.displaySize != outputSize(input, options.resolution) ||
@@ -128,11 +140,15 @@ bool validateOutput(const MediaInfo &input, const MediaInfo &output, const Encod
         return false;
     }
     // 输入时长明确时结果不得明显缺失；未知时长不伪造时长保证。
-    if (input.duration > 0 && (output.duration <= 0 || std::abs(output.duration - input.duration) >
-                                                           std::max(2.0, input.duration * 0.02))) {
+    const double target = range.duration(input.duration);
+    const double difference = std::abs(output.duration - target);
+    const bool invalidDuration = range.enabled ? difference > 0.5 || difference >= target / 2
+                                               : difference > std::max(2.0, target * 0.02);
+    if (target > 0 && (output.duration <= 0 || invalidDuration)) {
         *error = QStringLiteral("结果时长异常，未提交正式文件。");
         return false;
     }
+    // 所有目标约束均满足后清除诊断，允许调用方提交文件。
     error->clear();
     return true;
 }

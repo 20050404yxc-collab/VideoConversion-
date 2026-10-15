@@ -1,6 +1,6 @@
 # Added Requirements
 
-Revision 3 is a documentation-only plan pending detailed review and implementation authorization. Revision 2 is implemented and locally verified. Unchanged requirements retain their historical evidence; new/modified behavior below is not implemented or verified.
+Revision 3 was approved by “我已经阅读了文档，开始改第三版” and is implemented. New/modified behavior has local real-tool/native UI evidence in verification.md; human audible playback/synchronization, independent-target and high-DPI acceptance remain unverified. Requirements below remain the acceptance contract, not a claim that every environment/scenario passed.
 
 ## AC-01 File import
 
@@ -70,7 +70,7 @@ The application SHALL have a reproducible qmake build and a release package with
 
 Scenario: On a target environment without Qt development installation, extract the release package, import and convert a sample, then locate/play the output. Record failure or unavailable clean-environment testing truthfully. Delivery to HR is prepared for day three; external messaging is a separate explicit action.
 
-# Revision 3 ADDED Requirements (planned)
+# Revision 3 ADDED Requirements
 
 ## AC-12 Separate input preview
 
@@ -84,7 +84,19 @@ Each waiting item SHALL default to whole-file conversion and MAY store one range
 
 Scenario: Save 10–35 seconds for A and retain whole-file B. Reopen A, alter it and cancel: A remains 10–35 seconds. Reset and save: A is whole-file. Negative, reversed, equal and out-of-duration values never commit. Remove/re-add A or restart: its range defaults to whole-file.
 
+## AC-12 timeline interaction correction (2026-10-15)
+
+The position slider SHALL accept left-click absolute positioning, thumb dragging and dragging initiated on the groove. Pointer release SHALL commit the final position once, using actual style geometry and clamping beyond the ends. Keyboard/wheel value changes SHALL seek; backend-driven updates SHALL NOT trigger seeks or overwrite a held slider. Seeking SHALL preserve paused/playing state, cancel old selected-playback bounds through the existing controller and leave saved conversion ranges unchanged. The input area SHALL be at least 24 pixels high; arrow/page steps SHALL be 0.1%/10% of full duration.
+
+Scenario: On real seekable media, drag while paused and playing, click the groove, start a drag on the groove and use page keys. The backend reaches the chosen position with decoder-dependent tolerance, retains its playback state and does not implicitly save a range. Existing capability failures and selected-range workflows remain covered by UI regression.
+
+## AC-17 development setup and latest release follow-up (2026-10-15)
+
+Qt Creator shadow builds SHALL have an explicit documented VLC runtime configuration or complete adjacent deployment; no Qt installation modification/import library SHALL be required. The current local Creator Release executable SHALL receive the verified VLC 3.0.24 x64 runtime. Updated runtime/source release artifacts SHALL include the timeline repair, current manuals, license/provenance inventory and distinct current verification evidence. Validate the latest runtime with development PATH/environment variables removed before deleting superseded dist runtime directories/archives and obsolete release-check metadata; preserve project sources, tools and build evidence. Only the latest runtime directory, runtime ZIP and source ZIP SHALL remain in dist.
+
 ## AC-14 Selected-range preview and capability failure
+
+Diagnostic follow-up: Preview attempts SHALL record input/probed stream context, backend identity, load/capability transitions, named/numeric errors with original backend text, timeouts and available Qt multimedia warnings in the existing bounded session log. Empty backend detail SHALL be explicit rather than guessed. Threaded warnings SHALL be queued with session generations; closed/replaced sessions SHALL not contaminate a later preview. Position notifications SHALL not create per-frame log entries; normal Qt message handling SHALL continue. Users SHALL be able to copy the diagnostics after closing preview.
 
 Play Selected SHALL seek to the valid draft start and pause at its end without looping or converting. Whole-file playback SHALL remain independent of the saved conversion range. Unknown-duration or unseekable media SHALL disable range editing/saving with an explanation while retaining available playback and whole-file conversion. Playback errors SHALL be visible and disable playback-dependent controls/new range saves without invalidating otherwise convertible input or silently changing a saved range.
 
@@ -108,7 +120,23 @@ The release package SHALL include the Qt playback libraries/plugins used by the 
 
 Scenario: With developer Qt paths removed, run the new package, preview with sound, seek, select/save a range and convert it. Missing/unsupported playback yields an actionable message and leaves eligible whole-file conversion available. No unperformed independent-machine check is reported as passed.
 
-# Revision 3 MODIFIED Requirements (planned)
+# Revision 4 MODIFIED Requirements (approved)
+
+Revision 4 retains the user-visible contracts below and changes their backend to libVLC while retaining Qt 5.12.12. The user authorized “开始实施”; actual results and remaining acceptance limits are in verification.md.
+
+## AC-18 libVLC toolchain, deployment and redistribution
+
+The application SHALL retain Qt 5.12.12 and use libVLC for in-process preview after a compatible Windows x64 / MinGW 7.3 integration is established. The implementation SHALL verify the actual SDK/import-library ABI and calling convention; it SHALL NOT assume an MSVC `.lib` is directly linkable by MinGW. The release package SHALL deploy the matching libVLC runtime and required plugins using a documented application-relative strategy, record actual versions/sources/licenses, and pass with developer VLC/Qt paths removed. If a required component or redistribution term cannot be verified, implementation and packaging SHALL stop before claiming a portable solution.
+
+Scenario: Build with the local Qt 5.12 kit, start the packaged application with development paths cleared, load/play/seek the user's H.264/AAC MP4, verify audio output, close during load and playback, reopen another file and confirm resources are released. Inspect the exact distributed VLC binaries/plugins and their license notices. A successful link alone does not pass media compatibility or deployment acceptance.
+
+## AC-12/14/16/17 backend extension
+
+The preview dialog, range editing rules, logs, stale-session isolation and failure fallback SHALL remain as specified in AC-12/14/16/17, with playback operations routed through libVLC instead of Qt Multimedia/DirectShow. VLC callbacks that affect Qt state SHALL be marshalled to the GUI thread and ignored after their session ends. Closing/replacing a session SHALL stop playback and release media/player/instance objects in a defined order. Playback errors SHALL leave eligible whole-file FFmpeg conversion available and SHALL NOT erase saved ranges. Compatibility claims SHALL be limited to formats and configurations actually tested.
+
+Scenario: Exercise play, pause, volume, seek, selected-range start/end, normal audio and silent input, failure logging, repeated load/close and window shutdown. Existing range and FFmpeg conversion regression checks remain applicable; the actual MP4 and isolated packaged runtime are required for the new backend claim.
+
+# Revision 3 MODIFIED Requirements
 
 ## AC-03 Output snapshot extension
 

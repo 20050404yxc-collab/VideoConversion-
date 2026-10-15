@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PreviewDialog</class>
+ <widget class="QDialog" name="PreviewDialog">
+  <property name="geometry"><rect><x>0</x><y>0</y><width>780</width><height>660</height></rect></property>
+  <property name="minimumSize"><size><width>660</width><height>580</height></size></property>
+  <property name="windowTitle"><string>视频预览</string></property>
+  <layout class="QVBoxLayout" name="layout" stretch="1,0,0,0,0,0,0,0">
+   <property name="spacing"><number>10</number></property>
+   <item><widget class="QWidget" name="videoWidget" native="true"><property name="minimumSize"><size><width>0</width><height>160</height></size></property></widget></item>
+   <item><widget class="QLabel" name="noticeLabel"><property name="text"><string>正在加载视频……</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+   <item><layout class="QHBoxLayout" name="playLayout">
+    <item><widget class="QPushButton" name="playButton"><property name="text"><string>播放</string></property></widget></item>
+    <item><widget class="QLabel" name="volumeLabel"><property name="text"><string>音量</string></property></widget></item>
+    <item><widget class="QSlider" name="volumeSlider"><property name="maximum"><number>100</number></property><property name="value"><number>70</number></property><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="maximumSize"><size><width>110</width><height>16777215</height></size></property></widget></item>
+    <item><widget class="QLabel" name="positionLabel"><property name="text"><string>00:00:00.000 / 未知</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property></widget></item>
+   </layout></item>
+   <item><widget class="QSlider" name="positionSlider"><property name="maximum"><number>10000</number></property><property name="singleStep"><number>10</number></property><property name="pageStep"><number>1000</number></property><property name="minimumSize"><size><width>0</width><height>24</height></size></property><property name="accessibleName"><string>播放进度</string></property><property name="orientation"><enum>Qt::Horizontal</enum></property></widget></item>
+   <item><layout class="QHBoxLayout" name="rangeLayout">
+    <item><widget class="QPushButton" name="setStartButton"><property name="text"><string>设为起点</string></property></widget></item>
+    <item><widget class="QLineEdit" name="startEdit"><property name="text"><string>00:00:00.000</string></property><property name="accessibleName"><string>片段起点</string></property></widget></item>
+    <item><widget class="QLabel" name="toLabel"><property name="text"><string>至</string></property></widget></item>
+    <item><widget class="QLineEdit" name="endEdit"><property name="accessibleName"><string>片段终点</string></property></widget></item>
+    <item><widget class="QPushButton" name="setEndButton"><property name="text"><string>设为终点</string></property></widget></item>
+   </layout></item>
+   <item><widget class="QLabel" name="durationLabel"><property name="text"><string>整段</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+   <item><layout class="QHBoxLayout" name="rangeActions">
+    <item><widget class="QPushButton" name="selectedButton"><property name="text"><string>播放选中片段</string></property></widget></item>
+    <item><widget class="QPushButton" name="resetButton"><property name="text"><string>恢复整段</string></property></widget></item>
+    <item><spacer name="rangeSpacer"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property></spacer></item>
+   </layout></item>
+   <item><widget class="QDialogButtonBox" name="buttonBox"><property name="standardButtons"><set>QDialogButtonBox::Cancel|QDialogButtonBox::Save</set></property></widget></item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

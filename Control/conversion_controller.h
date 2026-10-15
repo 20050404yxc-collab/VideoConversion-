@@ -5,6 +5,7 @@
 #ifndef VIDEOCONVERSION_CONVERSION_CONTROLLER_H
 #define VIDEOCONVERSION_CONVERSION_CONTROLLER_H
 
+#include <QHash>
 #include <QObject>
 #include <QStringList>
 #include <QVector>
@@ -33,6 +34,16 @@ class ConversionController : public QObject
     void savePreferences(const ConversionSettings &settings);
     // 保存偏好并对本批 Waiting 项取得设置快照；重复开始不重复调度。
     bool startBatch(const ConversionSettings &settings);
+    // 只允许空闲、已探测且输入可访问的项预览；终态只读。
+    bool beginPreview(quint64 id, QString *error);
+    // 释放预览互斥，不更改任何任务或转换结果。
+    void endPreview();
+    // 仅预览会话能提交等待项范围；再次校验时间、输入与批次锁。
+    bool saveRange(quint64 id, const MediaRange &range, QString *error);
+    // 返回主窗口操作是否被预览会话锁定。
+    bool previewActive() const;
+    // 将播放诊断追加到已有有界会话日志，不触发主窗口错误提示或切页。
+    void recordPreviewDiagnostic(const QString &text);
     // 取消当前转换或结果探测，清理完成后继续下一项。
     void cancelCurrent();
     // 禁止后续调度，取消尚未开始的本批任务并停止当前进程。
@@ -95,6 +106,8 @@ class ConversionController : public QObject
     ConversionSettings m_snapshot;
     OutputFileManager m_outputs;
     QVector<quint64> m_batchIds;
+    QHash<quint64, MediaRange> m_batchRanges;
+    quint64 m_previewId = 0;
     QString m_log;
     quint64 m_nextTaskId = 0;
     quint64 m_requestId = 0;

@@ -36,6 +36,8 @@ struct ConversionTask
     QString normalizedPath;
     qint64 bytes = 0;
     MediaInfo media;
+    bool mediaValid = false;
+    MediaRange range;
     QImage thumbnail;
     TaskState state = TaskState::Inspecting;
     QString detail;

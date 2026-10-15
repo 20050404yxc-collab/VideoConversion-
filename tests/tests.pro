@@ -1,4 +1,4 @@
-QT += core gui testlib
+QT += core gui widgets testlib
 CONFIG += c++17 console testcase
 TEMPLATE = app
 TARGET = conversion_tests

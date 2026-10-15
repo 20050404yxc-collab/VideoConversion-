@@ -59,6 +59,7 @@ compile_commands.json
 /build/
 /dist/
 /tools/bin/
+/tools/vlc/
 /tools/ffmpeg-*/
 /tools/*.zip
 /tests/fixtures/
